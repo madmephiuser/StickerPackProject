@@ -26,11 +26,15 @@ public class AuditableGigaChatProxy implements ImageGenerationService {
 
     @Override
     public byte[] generateStickerImage(String emotion, String systemPrompt) {
+        if (!checkAccess(emotion)) {
+            throw new SecurityException("Доступ запрещен для генерации изображения: " + emotion);
+        }
+        
         GigaChatAuditLog log = new GigaChatAuditLog();
         log.setPrompt("User prompt: " + emotion + " | System prompt: " + systemPrompt);
         
         try {
-            byte[] imageBytes = realService.generateStickerImage(emotion, systemPrompt);
+            byte[] imageBytes = realService.generateStickerImage(emotion, systemPrompt);           
             log.setStatus("SUCCESS");
             log.setStatusCode(200);
             log.setResponseOrError("Изображение успешно загружено. Размер: " + imageBytes.length + " байт.");
@@ -41,7 +45,14 @@ public class AuditableGigaChatProxy implements ImageGenerationService {
             log.setResponseOrError(ex.getMessage());
             throw ex;
         } finally {
-            auditRepository.save(log); 
+            auditRepository.save(log);
         }
+    }
+
+    private boolean checkAccess(String emotion) {
+        if (emotion.toLowerCase().contains("запрещенная")) {
+            return false;
+        }      
+        return true; 
     }
 }
