@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package facade;
 
 import dto.StickerPackDetailResponse;
@@ -21,6 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.scheduling.annotation.Async;
+import service.RateLimitService;
 import service.StickerGenerationOrchestrator;
 
 
@@ -29,11 +26,14 @@ public class StickerPackFacade {
 
     private final StickerPackRepository stickerPackRepository;
     private final StickerGenerationOrchestrator orchestrator;
+    private final RateLimitService rateLimitService;
 
     public StickerPackFacade(StickerPackRepository stickerPackRepository,
-                             StickerGenerationOrchestrator orchestrator) {
+                             StickerGenerationOrchestrator orchestrator,
+                             RateLimitService rateLimitService) {
         this.stickerPackRepository = stickerPackRepository;
         this.orchestrator = orchestrator;
+        this.rateLimitService = rateLimitService;
     }
 
     // проверяем, что пак существует и принадлежит именно этому пользователю
@@ -90,6 +90,7 @@ public class StickerPackFacade {
 
     @Transactional
     public StickerPackResponse createStickerPack(StickerPackRequest request, UserEntity user) {
+        rateLimitService.checkLimit(user.getId());
 
         StickerPackEntity pack = new StickerPackEntity();
         pack.setTitle(request.getTitle());
@@ -108,6 +109,7 @@ public class StickerPackFacade {
 
     @Transactional
     public StickerPackResponse regenerateStickerPack(Long parentPackId, StickerPackRequest newParams, Long userId) {
+        rateLimitService.checkLimit(userId);
 
         StickerPackEntity oldPack = getOwnedPack(parentPackId, userId);
 
@@ -118,7 +120,7 @@ public class StickerPackFacade {
         newVersionPack.setIronyLevel(newParams.getIronyLevel() > 0 ? newParams.getIronyLevel() : oldPack.getIronyLevel());
         newVersionPack.setAnalysisMode(newParams.getAnalysisMode() != null ? newParams.getAnalysisMode() : oldPack.getAnalysisMode());
 
-
+        
         StickerPackEntity root = getRoot(oldPack);
         newVersionPack.setParentPack(root);
         newVersionPack.setVersion(nextVersion(root));
@@ -135,6 +137,7 @@ public class StickerPackFacade {
 
     @Transactional
     public StickerPackResponse regenerateSingleSticker(Long packId, String emotion, Long userId) {
+        rateLimitService.checkLimit(userId);
 
         StickerPackEntity oldPack = getOwnedPack(packId, userId);
 
