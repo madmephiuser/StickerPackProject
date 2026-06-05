@@ -1,0 +1,11 @@
+# секреты
+.env
+
+# сборка Maven
+target/
+
+# IDE
+.idea/
+nbproject/private/
+nbactions.xml
+*.iml
