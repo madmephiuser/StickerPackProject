@@ -65,50 +65,6 @@
 | **static** | `web.html` - пользовательский интерфейс |
 | **test** | Unit- и интеграционные тесты |
 
-## Основной поток выполнения
-
-StickerPackProject (main)
-↓
-Spring Boot запускает приложение и поднимает Tomcat
-↓
-Пользователь открывает http://localhost:8080/web.html
-↓
-Frontend вызывает REST API (Basic Authentication)
-↓
-Контроллеры принимают HTTP-запросы:
-├── AuthController - регистрация пользователей
-└── StickerPackController - управление стикер-паками
-↓
-StickerPackFacade выполняет оркестрацию:
-├── RateLimitService - проверка лимита запросов
-├── Поиск/создание корневой версии пака
-└── Сохранение пака в БД (статус PROCESSING)
-↓
-@Async асинхронный вызов StickerGenerationOrchestrator
-↓
-Оркестратор выполняет генерацию:
-├── PromptStrategyFactory - создание стратегии промпта
-├── StickerPromptContext - формирование системного промпта
-└── Цикл по эмоциям:
-↓
-AuditableGigaChatProxy (аудит + проверка доступа)
-↓
-GigaChatImageServiceImpl (адаптер)
-↓
-GigaChatClient получает данные из GigaChat API:
-├── POST /chat/completions - генерация изображения
-└── GET /files/{fileId} - скачивание изображения
-↓
-JPA repositories сохраняют данные в PostgreSQL:
-├── sticker_packs - информация о паке
-├── stickers - изображения стикеров
-└── gigachat_audit_logs - логи аудита
-↓
-Статус пака обновляется: PROCESSING в SUCCESS / ERROR
-↓
-Frontend отображает результат (стикеры, версии пака)
-
-
 ---
 
 ## 4. Основные классы проекта
